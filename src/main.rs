@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use crate::nacos::nacos::{Config, Runtime};
 
 mod nacos;
 
@@ -16,7 +17,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     ctrlc::set_handler(move || {
         r.store(false, Ordering::SeqCst);
     })
-    .expect("Error setting Ctrl-C handler");
+        .expect("Error setting Ctrl-C handler");
 
     let cmd = clap::Command::new("nacos-perf-utils")
         .bin_name("nacos-perf-utils")
@@ -39,6 +40,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .help("nacos mock client number")
                         .default_missing_value("1"),
                 )
+                .arg(
+                    clap::Arg::new("username")
+                        .short('u')
+                        .long("username")
+                        .help("username for nacos api")
+                        .takes_value(true)
+                )
+                .arg(
+                    clap::Arg::new("password")
+                        .short('w')
+                        .long("password")
+                        .help("password for nacos api")
+                        .takes_value(true)
+                )
                 .arg_required_else_help(true),
         );
     let matches = cmd.get_matches();
@@ -59,9 +74,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .to_string()
         .parse::<u32>()
         .unwrap();
+    let username = matches
+        .get_one::<String>("username")
+        .map(|f| f.to_string());
+    let password = matches
+        .get_one::<String>("password")
+        .map(|f| f.to_string());
 
-    let mut runtime = nacos::nacos::Runtime::default();
-    runtime.run(nacos.clone(), port, num).await?;
+    let config = Config {
+        nacos: nacos.to_string(),
+        port: port,
+        num,
+        username,
+        password,
+    };
+
+    let mut runtime = Runtime::new(config.clone());
+    runtime.run(config.clone()).await?;
 
     println!("Waiting for Ctrl-C...");
     while running.load(Ordering::SeqCst) {}

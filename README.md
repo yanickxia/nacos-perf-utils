@@ -11,3 +11,9 @@ $ nacos-perf-utils --help
 ```
 $ nacos-perf-utils instance -p 10000 -n 10  http://<YOUR-NACOS-IP>:8848
 ```
+
+
+### 注册虚拟实例(带验证)
+```
+$ nacos-perf-utils instance -p 10000 -n 10 --username <NACOS_USER> --password <NACOS_PWD>  http://<YOUR-NACOS-IP>:8848
+```
